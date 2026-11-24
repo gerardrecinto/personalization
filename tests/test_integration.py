@@ -15,7 +15,10 @@ c = httpx.Client(base_url=API, timeout=15)
 def wait_until(fn, timeout=60, msg="condition"):
     end = time.time() + timeout
     while time.time() < end:
-        v = fn()
+        try:
+            v = fn()
+        except httpx.TransportError:  # API still starting or restarting
+            v = None
         if v:
             return v
         time.sleep(0.5)
