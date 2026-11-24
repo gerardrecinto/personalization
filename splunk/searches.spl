@@ -1,0 +1,16 @@
+# Saved searches for the JSON logs this service writes. Field names match personalization/logs.py.
+
+# Recommendation latency by minute (p95 and max)
+index=main msg="recommendations served" | timechart span=1m perc95(ms) AS p95_ms max(ms) AS max_ms
+
+# Share of responses that had no history signal
+index=main msg="recommendations served" | eval cold=if(history=0,1,0) | timechart span=5m avg(cold) AS cold_start_rate
+
+# Events that went to the dead-letter topic (alert when this is above 0 for 5 minutes)
+index=main level=warn msg="event dead-lettered" | timechart span=1m count
+
+# Worker failures that will be retried
+index=main level=error msg="apply failed, will retry" | stats count by error
+
+# Duplicate deliveries, a sign Pub/Sub is redelivering
+index=main msg="duplicate ignored" | timechart span=5m count

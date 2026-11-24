@@ -1,0 +1,111 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    name: Unit tests and offline evaluation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install -r requirements-dev.txt
+      - run: pytest tests/test_unit.py
+
+  stack:
+    name: End to end on Docker Compose (Redis and Pub/Sub emulator)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install -r requirements-dev.txt
+      - run: docker compose up -d --build
+      - run: STACK=compose API_URL=http://localhost:8000 PUBSUB_EMULATOR_HOST=localhost:8085 pytest tests/test_integration.py
+      - if: failure()
+        run: docker compose logs --tail 100
+      - if: always()
+        run: docker compose down -v
+
+  splunk:
+    name: Logs searchable in a real Splunk
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install -r requirements-dev.txt
+      - run: docker compose up -d --build
+      - run: STACK=compose API_URL=http://localhost:8000 PUBSUB_EMULATOR_HOST=localhost:8085 pytest tests/test_integration.py -k "not readiness"
+      - name: Start Splunk
+        run: |
+          docker run -d --name splunk -p 8088:8088 -p 8089:8089 \
+            -e SPLUNK_START_ARGS=--accept-license -e SPLUNK_GENERAL_TERMS=--accept-sgt-current-at-splunk-com \
+            -e SPLUNK_PASSWORD='Chang3d!Pass' -e SPLUNK_HEC_TOKEN=lab-hec-token splunk/splunk:9.3
+          for i in $(seq 1 90); do
+            [ "$(docker inspect -f '{{.State.Health.Status}}' splunk)" = healthy ] && exit 0
+            sleep 5
+          done
+          docker logs splunk | tail -40; exit 1
+      - run: python scripts/splunk_check.py
+      - if: always()
+        run: docker compose down -v
+
+  kubernetes:
+    name: Deploy to Kubernetes (kind) and run the same tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install -r requirements-dev.txt
+      - run: docker build -t personalization-lab:ci .
+      - uses: helm/kind-action@v1
+        with: {cluster_name: lab}
+      - run: kind load docker-image personalization-lab:ci --name lab
+      - run: kubectl apply -f k8s/lab.yaml
+      - run: |
+          kubectl wait --for=condition=available deployment/redis deployment/pubsub --timeout=300s
+          kubectl rollout status deployment/api --timeout=300s
+          kubectl rollout status deployment/worker --timeout=120s
+      - run: |
+          kubectl port-forward svc/api 8000:80 &
+          sleep 3
+          API_URL=http://localhost:8000 pytest tests/test_integration.py
+      - if: failure()
+        run: kubectl get pods -A && kubectl logs deploy/api --tail 50 && kubectl logs deploy/worker --tail 50
+
+  image:
+    name: Image scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t personalization-lab:ci .
+      - uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: personalization-lab:ci
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+
+  terraform:
+    name: Terraform for GCP (fmt, validate, scan)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform fmt -check -recursive terraform
+      - run: cd terraform/gcp && terraform init -backend=false -input=false && terraform validate
+      - uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: config
+          scan-ref: terraform
+          severity: HIGH,CRITICAL
+          exit-code: '1'

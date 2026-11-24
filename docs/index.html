@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>personalization-lab: events, recommendations, proof</title>
+<meta name="description" content="A backend recommendation service on Google Pub/Sub and Redis, tested end to end on Docker and Kubernetes, with logs searchable in Splunk.">
+<meta property="og:title" content="personalization-lab">
+<meta property="og:description" content="Recommendations you can test, explain and operate.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b1220'/%3E%3Cpath d='M9 17l5 5 9-12' fill='none' stroke='%2334d399' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#070b14;--panel:#0d1424;--line:#1c2742;--ink:#e6edf7;--mute:#93a1b8;--acc:#34d399;--acc2:#60a5fa;--bad:#f87171}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:radial-gradient(1200px 600px at 80% -10%,#10223f 0,transparent 60%),radial-gradient(900px 500px at -10% 10%,#0d2a2a 0,transparent 55%),var(--bg);color:var(--ink);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif}
+a{color:var(--acc2);text-decoration:none}a:hover{text-decoration:underline}
+.wrap{max-width:1040px;margin:0 auto;padding:0 24px}
+nav{display:flex;justify-content:space-between;align-items:center;padding:22px 0}
+.logo{font-weight:800;letter-spacing:-.02em;color:var(--ink)}
+.logo b{color:var(--acc)}
+nav .links a{margin-left:22px;color:var(--mute);font-size:14px}
+.hero{padding:70px 0 40px}
+.tag{display:inline-block;padding:5px 12px;border:1px solid var(--line);border-radius:99px;color:var(--acc);font-size:13px;background:#0b1a1c}
+h1{font-size:clamp(34px,6vw,60px);line-height:1.05;letter-spacing:-.035em;margin:18px 0 18px;font-weight:800}
+h1 span{background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{font-size:20px;color:var(--mute);max-width:680px}
+.cta{margin:30px 0 8px;display:flex;gap:12px;flex-wrap:wrap}
+.btn{padding:12px 20px;border-radius:10px;font-weight:600;border:1px solid var(--line);color:var(--ink);background:var(--panel)}
+.btn.p{background:linear-gradient(90deg,var(--acc),#22c1a5);color:#04130e;border:0}
+.btn:hover{text-decoration:none;filter:brightness(1.1)}
+.badge{margin-top:18px}
+.badge img{height:22px}
+section{padding:46px 0}
+h2{font-size:30px;letter-spacing:-.02em;margin:0 0 8px}
+.sub{color:var(--mute);margin:0 0 26px;max-width:680px}
+.flow{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;overflow-x:auto}
+.flow svg{display:block;min-width:760px;width:100%;height:auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
+.card h3{margin:0 0 6px;font-size:17px}
+.card p{margin:0;color:var(--mute);font-size:15px}
+.ok{color:var(--acc);font-weight:700;font-size:13px;letter-spacing:.04em;text-transform:uppercase}
+.warn{color:#fbbf24;font-weight:700;font-size:13px;letter-spacing:.04em;text-transform:uppercase}
+pre{background:#050810;border:1px solid var(--line);border-radius:12px;padding:18px;overflow-x:auto;font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#cfe3ff}
+.c{color:#5f7191}
+table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;font-size:15px}
+th,td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mute);font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:.05em;background:#0a1120}
+tr:last-child td{border-bottom:0}
+.pill{padding:2px 10px;border-radius:99px;font-size:12px;font-weight:700;white-space:nowrap}
+.pill.g{background:#0c2b22;color:var(--acc)}.pill.y{background:#2b230c;color:#fbbf24}
+footer{border-top:1px solid var(--line);padding:30px 0 50px;color:var(--mute);font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <div class="logo">personalization<b>-</b>lab</div>
+    <div class="links"><a href="#flow">How it works</a><a href="#proof">Proof</a><a href="#ops">Operations</a><a href="#limits">Limits</a><a href="https://github.com/gerardrecinto/personalization-lab">GitHub</a></div>
+  </nav>
+
+  <header class="hero">
+    <span class="tag">Python · Pub/Sub · Redis · Docker · Kubernetes · Splunk</span>
+    <h1>Recommendations you can<br><span>test, explain and operate.</span></h1>
+    <p class="lead">An event-driven backend service: events in, item-item recommendations out, each with a reason. Every behavior is a test against the real stack, and the same tests run again on Kubernetes.</p>
+    <div class="cta">
+      <a class="btn p" href="https://github.com/gerardrecinto/personalization-lab">View the code</a>
+      <a class="btn" href="https://github.com/gerardrecinto/personalization-lab/actions">See the CI runs</a>
+    </div>
+    <div class="badge"><a href="https://github.com/gerardrecinto/personalization-lab/actions/workflows/ci.yml"><img alt="CI status" src="https://github.com/gerardrecinto/personalization-lab/actions/workflows/ci.yml/badge.svg"></a></div>
+  </header>
+
+  <section id="numbers">
+    <div class="grid">
+      <div class="card"><div class="ok">Offline recall@10</div><h3>0.284 vs 0.050</h3><p>Item-item against plain popularity on synthetic data with planted taste groups. 5.7x.</p></div>
+      <div class="card"><div class="ok">Duplicates</div><h3>Applied once</h3><p>A repeated event id changes nothing. Pub/Sub delivers at least once, so this matters.</p></div>
+      <div class="card"><div class="ok">Bad messages</div><h3>Dead-lettered</h3><p>A malformed message goes to a separate topic instead of retrying forever.</p></div>
+      <div class="card"><div class="ok">Privacy</div><h3>No raw user ids</h3><p>A keyed hash is the only user identifier in Redis and in the logs.</p></div>
+    </div>
+  </section>
+
+  <section id="flow">
+    <h2>One event, one recommendation</h2>
+    <p class="sub">The API only accepts and answers. The worker does the writing. Redis holds the features.</p>
+    <div class="flow">
+      <svg viewBox="0 0 900 220" role="img" aria-label="Events flow from the API through Pub/Sub to a worker and Redis, and recommendations are read from Redis by the API">
+        <defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#5f7191"/></marker></defs>
+        <g font-family="-apple-system,Segoe UI,sans-serif" font-size="14" fill="#e6edf7" text-anchor="middle">
+          <rect x="10" y="30" width="150" height="64" rx="12" fill="#0d1424" stroke="#1c2742"/><text x="85" y="58" font-weight="700">POST /events</text><text x="85" y="78" fill="#93a1b8" font-size="12">API validates</text>
+          <rect x="220" y="30" width="150" height="64" rx="12" fill="#0d1424" stroke="#60a5fa"/><text x="295" y="58" font-weight="700">Pub/Sub</text><text x="295" y="78" fill="#93a1b8" font-size="12">topic + dead letter</text>
+          <rect x="430" y="30" width="150" height="64" rx="12" fill="#0d1424" stroke="#1c2742"/><text x="505" y="58" font-weight="700">Worker</text><text x="505" y="78" fill="#93a1b8" font-size="12">dedupe, update counts</text>
+          <rect x="640" y="30" width="150" height="64" rx="12" fill="#0c2b22" stroke="#34d399"/><text x="715" y="58" font-weight="700" fill="#34d399">Redis</text><text x="715" y="78" fill="#93a1b8" font-size="12">pop, co-occurrence, history</text>
+          <rect x="640" y="130" width="150" height="64" rx="12" fill="#0d1424" stroke="#1c2742"/><text x="715" y="158" font-weight="700">GET /recommendations</text><text x="715" y="178" fill="#93a1b8" font-size="12">score, filter, explain</text>
+        </g>
+        <g stroke="#5f7191" stroke-width="2" fill="none" marker-end="url(#a)"><path d="M160 62H216"/><path d="M370 62H426"/><path d="M580 62H636"/><path d="M715 130V98"/></g>
+      </svg>
+    </div>
+  </section>
+
+  <section id="proof">
+    <h2>What CI proves</h2>
+    <p class="sub">Six jobs on every push. The same end-to-end tests run on Docker Compose and on a kind cluster.</p>
+    <table>
+      <tr><th>Check</th><th>How</th></tr>
+      <tr><td>Recommendation quality and unit behavior</td><td>Cold start, restricted items, reasons, hashing, A/B z-test, offline recall</td></tr>
+      <tr><td>Event-driven path</td><td>Real Pub/Sub emulator and Redis: events, duplicates, dead letters, readiness with Redis down</td></tr>
+      <tr><td>Kubernetes</td><td>Deployments, probes, PDB and HPA applied to kind, then the same tests through a port-forward</td></tr>
+      <tr><td>Logs</td><td>JSON logs shipped to a real Splunk over HEC and found with a search</td></tr>
+      <tr><td>Image and infrastructure</td><td>Trivy on the image and on the GCP Terraform; Terraform fmt and validate</td></tr>
+    </table>
+  </section>
+
+  <section id="ops">
+    <h2>Built to be operated</h2>
+    <div class="grid">
+      <div class="card"><h3>Probes that mean something</h3><p>Liveness does not depend on Redis. Readiness does, so a bad Redis takes the pod out of rotation without a restart loop.</p></div>
+      <div class="card"><h3>Searchable logs</h3><p>One JSON line per action. Saved Splunk searches for latency, cold-start rate, dead letters and retries are in <code>splunk/</code>.</p></div>
+      <div class="card"><h3>Safe rollouts</h3><p>Zero unavailable during a rolling update, a deadline, a disruption budget, and a Jenkinsfile that undoes a failed rollout.</p></div>
+      <div class="card"><h3>GCP shape</h3><p>Terraform for Pub/Sub with dead letter, Memorystore, Cloud Run and separate publisher and subscriber service accounts.</p></div>
+    </div>
+  </section>
+
+  <section id="limits">
+    <h2>What this does not prove</h2>
+    <p class="sub">So you do not have to guess.</p>
+    <div class="grid">
+      <div class="card"><div class="warn">Not on GCP</div><p>Pub/Sub and Redis run as local stand-ins. The GCP Terraform is validated and scanned, never applied.</p></div>
+      <div class="card"><div class="warn">Synthetic data</div><p>The recommender is item-item co-occurrence. The offline lift will not carry over to real traffic.</p></div>
+      <div class="card"><div class="warn">Other CI systems</div><p>The Jenkinsfile and CircleCI config use the same steps as GitHub Actions and have not run on those systems.</p></div>
+    </div>
+  </section>
+
+  <footer>
+    Built by <a href="https://github.com/gerardrecinto">Gerard Louis Recinto</a>. MIT licensed. <a href="https://github.com/gerardrecinto/personalization-lab">Source</a>.
+  </footer>
+</div>
+</body>
+</html>

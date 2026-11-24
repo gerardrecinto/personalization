@@ -1,0 +1,26 @@
+# Redis, the Google Pub/Sub emulator, the API and the worker. API on :8000, Redis on :6379, emulator on :8085.
+services:
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    healthcheck: {test: ["CMD", "redis-cli", "ping"], interval: 2s, timeout: 2s, retries: 30}
+  pubsub:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+    command: gcloud beta emulators pubsub start --host-port=0.0.0.0:8085 --project=lab-project
+    ports: ["8085:8085"]
+  api:
+    build: .
+    environment: &env
+      REDIS_URL: redis://redis:6379/0
+      PUBSUB_EMULATOR_HOST: pubsub:8085
+      GCP_PROJECT: lab-project
+      USER_HASH_SECRET: compose-only-secret
+    depends_on: {redis: {condition: service_healthy}, pubsub: {condition: service_started}}
+    ports: ["8000:8000"]
+    restart: on-failure
+  worker:
+    build: .
+    command: python -m personalization.worker
+    environment: *env
+    depends_on: {redis: {condition: service_healthy}, pubsub: {condition: service_started}}
+    restart: on-failure
