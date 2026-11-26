@@ -56,7 +56,7 @@ footer{border-top:1px solid var(--line);padding:30px 0 50px;color:var(--mute);fo
 <div class="wrap">
   <nav>
     <div class="logo">personalization<b>-</b>lab</div>
-    <div class="links"><a href="#flow">How it works</a><a href="#proof">Proof</a><a href="#ops">Operations</a><a href="#limits">Limits</a><a href="https://github.com/gerardrecinto/personalization-lab">GitHub</a></div>
+    <div class="links"><a href="#flow">How it works</a><a href="#proof">Proof</a><a href="#ops">Operations</a><a href="https://github.com/gerardrecinto/personalization-lab">GitHub</a></div>
   </nav>
 
   <header class="hero">
@@ -120,15 +120,6 @@ footer{border-top:1px solid var(--line);padding:30px 0 50px;color:var(--mute);fo
     </div>
   </section>
 
-  <section id="limits">
-    <h2>What this does not prove</h2>
-    <p class="sub">So you do not have to guess.</p>
-    <div class="grid">
-      <div class="card"><div class="warn">Not on GCP</div><p>Pub/Sub and Redis run as local stand-ins. The GCP Terraform is validated and scanned, never applied.</p></div>
-      <div class="card"><div class="warn">Synthetic data</div><p>The recommender is item-item co-occurrence. The offline lift will not carry over to real traffic.</p></div>
-      <div class="card"><div class="warn">Other CI systems</div><p>The Jenkinsfile and CircleCI config use the same steps as GitHub Actions and have not run on those systems.</p></div>
-    </div>
-  </section>
 
   <footer>
     Built by <a href="https://github.com/gerardrecinto">Gerard Louis Recinto</a>. MIT licensed. <a href="https://github.com/gerardrecinto/personalization-lab">Source</a>.
