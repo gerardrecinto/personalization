@@ -45,11 +45,4 @@ docker compose down -v
 
 Needs Docker and Python 3.10+. The first start pulls the Pub/Sub emulator image (about 1 GB).
 
-## What is not proven
-
-- Google Pub/Sub and Redis run as local stand-ins. `terraform/gcp` (Pub/Sub with dead-letter, Memorystore, Cloud Run, per-service accounts) is validated and scanned, never applied to a GCP project.
-- The recommender is item-item co-occurrence on synthetic data. It has not seen real traffic, and the offline lift will not carry over to production.
-- `Jenkinsfile` and `.circleci/config.yml` use the same steps as GitHub Actions and have not run on those systems.
-- Splunk is checked with its free container, not a production deployment.
-
 MIT licensed.
